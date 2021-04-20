@@ -1,38 +1,67 @@
 package hyperone
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 
-	builderT "github.com/hashicorp/packer/acctest"
+	"github.com/hashicorp/packer-plugin-sdk/acctest"
 )
 
-func TestBuilderAcc_basic(t *testing.T) {
-	builderT.Test(t, builderT.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		Builder:  &Builder{},
+func TestAccBuilder_basic(t *testing.T) {
+	testCase := &acctest.PluginTestCase{
+		Name:     "hyperone_basic_test",
+		Setup: func() error {
+			if v := os.Getenv("HYPERONE_TOKEN"); v == "" {
+				return fmt.Errorf("HYPERONE_TOKEN must be set for acceptance tests")
+			}
+			return nil
+		},
 		Template: testBuilderAccBasic,
-	})
+		Check: func(buildCommand *exec.Cmd, logfile string) error {
+			if buildCommand.ProcessState != nil {
+				if buildCommand.ProcessState.ExitCode() != 0 {
+					return fmt.Errorf("Bad exit code. Logfile: %s", logfile)
+				}
+			}
+			return nil
+		},
+	}
+	acctest.TestPlugin(t, testCase)
 }
 
 func TestBuilderAcc_chroot(t *testing.T) {
-	builderT.Test(t, builderT.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		Builder:  &Builder{},
+	//builderT.Test(t, builderT.TestCase{
+	//	PreCheck: func() { testAccPreCheck(t) },
+	//	Builder:  &Builder{},
+	//	Template: testBuilderAccChroot,
+	//})
+	testCase := &acctest.PluginTestCase{
+		Name:     "hyperone_chroot_test",
+		Setup: func() error {
+			if v := os.Getenv("HYPERONE_TOKEN"); v == "" {
+				return fmt.Errorf("HYPERONE_TOKEN must be set for acceptance tests")
+			}
+			return nil
+		},
 		Template: testBuilderAccChroot,
-	})
-}
-
-func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("HYPERONE_TOKEN"); v == "" {
-		t.Fatal("HYPERONE_TOKEN must be set for acceptance tests")
+		Check: func(buildCommand *exec.Cmd, logfile string) error {
+			if buildCommand.ProcessState != nil {
+				if buildCommand.ProcessState.ExitCode() != 0 {
+					return fmt.Errorf("Bad exit code. Logfile: %s", logfile)
+				}
+			}
+			return nil
+		},
 	}
+	acctest.TestPlugin(t, testCase)
 }
 
 const testBuilderAccBasic = `
 {
 	"builders": [{
-		"type": "test",
+		"type": "hyperone",
 		"vm_type": "a1.nano",
 		"source_image": "ubuntu",
 		"disk_size": 10,
@@ -49,7 +78,7 @@ const testBuilderAccBasic = `
 const testBuilderAccChroot = `
 {
 	"builders": [{
-		"type": "test",
+		"type": "hyperone",
 		"source_image": "ubuntu",
 		"disk_size": 10,
 		"vm_type": "a1.nano",
