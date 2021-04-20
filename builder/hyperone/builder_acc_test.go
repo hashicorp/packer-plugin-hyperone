@@ -11,7 +11,7 @@ import (
 
 func TestAccBuilder_basic(t *testing.T) {
 	testCase := &acctest.PluginTestCase{
-		Name:     "hyperone_basic_test",
+		Name: "hyperone_basic_test",
 		Setup: func() error {
 			if v := os.Getenv("HYPERONE_TOKEN"); v == "" {
 				return fmt.Errorf("HYPERONE_TOKEN must be set for acceptance tests")
@@ -32,13 +32,8 @@ func TestAccBuilder_basic(t *testing.T) {
 }
 
 func TestBuilderAcc_chroot(t *testing.T) {
-	//builderT.Test(t, builderT.TestCase{
-	//	PreCheck: func() { testAccPreCheck(t) },
-	//	Builder:  &Builder{},
-	//	Template: testBuilderAccChroot,
-	//})
 	testCase := &acctest.PluginTestCase{
-		Name:     "hyperone_chroot_test",
+		Name: "hyperone_chroot_test",
 		Setup: func() error {
 			if v := os.Getenv("HYPERONE_TOKEN"); v == "" {
 				return fmt.Errorf("HYPERONE_TOKEN must be set for acceptance tests")

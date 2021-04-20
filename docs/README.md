@@ -1,13 +1,10 @@
-# Scaffolding Plugins
+# HyperOne Plugins
 
-<!--
-  Include a short overview about the plugin.
+The HyperOne Packer Plugin with a single builder able to create new images on the HyperOne platform.
+The builder takes a source image, runs any provisioning necessary on
+the image after launching it, then creates a reusable image.
 
-  This document is a great location for creating a table of contents for each
-  of the components the plugin may provide. This document should load automatically
-  when navigating to the docs directory for a plugin.
-
--->
+- [hyperone](/docs/builders/hyperone.mdx)
 
 ## Installation
 
@@ -25,9 +22,9 @@ Then, run [`packer init`](https://www.packer.io/docs/commands/init).
 ```hcl
 packer {
   required_plugins {
-    name = {
+    hyperone = {
       version = ">= 0.0.1"
-      source  = "github.com/hashicorp/name"
+      source  = "github.com/hashicorp/hyperone"
     }
   }
 }
@@ -46,33 +43,7 @@ To install the plugin, please follow the Packer documentation on
 
 If you prefer to build the plugin from its source code, clone the GitHub
 repository locally and run the command `go build` from the root
-directory. Upon successful compilation, a `packer-plugin-name` plugin
+directory. Upon successful compilation, a `packer-plugin-hyperone` plugin
 binary file can be found in the root directory.
 To install the compiled plugin, please follow the official Packer documentation
 on [installing a plugin](https://www.packer.io/docs/extending/plugins/#installing-plugins).
-
-
-## Plugin Contents
-
-The Scaffolding plugin is intended as a starting point for creating Packer plugins, containing:
-
-### Builders
-
-- [builder](/docs/builders/builder-name.mdx) - The scaffolding builder is used to create endless Packer
-  plugins using a consistent plugin structure.
-
-### Provisioners
-
-- [provisioner](/docs/provisioners/provisioner-name.mdx) - The scaffolding provisioner is used to provisioner
-  Packer builds.
-
-### Post-processors
-
-- [post-processor](/docs/post-processors/postprocessor-name.mdx) - The scaffolding post-processor is used to
-  export scaffolding builds.
-
-### Data Sources
-
-- [data source](/docs/datasources/datasource-name.mdx) - The scaffolding data source is used to
-  export scaffolding data.
-

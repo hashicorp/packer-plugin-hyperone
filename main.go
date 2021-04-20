@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/packer-plugin-hyperone/builder/hyperone"
 	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/hashicorp/packer-plugin-sdk/version"
 )
@@ -25,6 +26,7 @@ var (
 func main() {
 	pps := plugin.NewSet()
 	pps.SetVersion(PluginVersion)
+	pps.RegisterBuilder(plugin.DEFAULT_NAME, new(hyperone.Builder))
 	err := pps.Run()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
