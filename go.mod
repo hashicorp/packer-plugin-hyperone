@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/hashicorp/hcl/v2 v2.10.0
-	github.com/hashicorp/packer-plugin-sdk v0.2.1
+	github.com/hashicorp/packer-plugin-sdk v0.2.2
 	github.com/hyperonecom/h1-client-go v0.0.0-20191203060043-b46280e4c4a4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.4.1
