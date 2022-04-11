@@ -69,9 +69,7 @@ type FlatConfig struct {
 	WinRMInsecure             *bool                  `mapstructure:"winrm_insecure" cty:"winrm_insecure" hcl:"winrm_insecure"`
 	WinRMUseNTLM              *bool                  `mapstructure:"winrm_use_ntlm" cty:"winrm_use_ntlm" hcl:"winrm_use_ntlm"`
 	APIURL                    *string                `mapstructure:"api_url" required:"false" cty:"api_url" hcl:"api_url"`
-	Token                     *string                `mapstructure:"token" required:"true" cty:"token" hcl:"token"`
 	Project                   *string                `mapstructure:"project" required:"true" cty:"project" hcl:"project"`
-	TokenLogin                *string                `mapstructure:"token_login" required:"false" cty:"token_login" hcl:"token_login"`
 	StateTimeout              *string                `mapstructure:"state_timeout" required:"false" cty:"state_timeout" hcl:"state_timeout"`
 	SourceImage               *string                `mapstructure:"source_image" required:"true" cty:"source_image" hcl:"source_image"`
 	ImageName                 *string                `mapstructure:"image_name" required:"false" cty:"image_name" hcl:"image_name"`
@@ -89,7 +87,6 @@ type FlatConfig struct {
 	Network                   *string                `mapstructure:"network" required:"false" cty:"network" hcl:"network"`
 	PrivateIP                 *string                `mapstructure:"private_ip" required:"false" cty:"private_ip" hcl:"private_ip"`
 	PublicIP                  *string                `mapstructure:"public_ip" required:"false" cty:"public_ip" hcl:"public_ip"`
-	PublicNetAdpService       *string                `mapstructure:"public_netadp_service" required:"false" cty:"public_netadp_service" hcl:"public_netadp_service"`
 	ChrootDevice              *string                `mapstructure:"chroot_device" cty:"chroot_device" hcl:"chroot_device"`
 	ChrootDisk                *bool                  `mapstructure:"chroot_disk" cty:"chroot_disk" hcl:"chroot_disk"`
 	ChrootDiskSize            *float32               `mapstructure:"chroot_disk_size" cty:"chroot_disk_size" hcl:"chroot_disk_size"`
@@ -176,9 +173,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"winrm_insecure":               &hcldec.AttrSpec{Name: "winrm_insecure", Type: cty.Bool, Required: false},
 		"winrm_use_ntlm":               &hcldec.AttrSpec{Name: "winrm_use_ntlm", Type: cty.Bool, Required: false},
 		"api_url":                      &hcldec.AttrSpec{Name: "api_url", Type: cty.String, Required: false},
-		"token":                        &hcldec.AttrSpec{Name: "token", Type: cty.String, Required: false},
 		"project":                      &hcldec.AttrSpec{Name: "project", Type: cty.String, Required: false},
-		"token_login":                  &hcldec.AttrSpec{Name: "token_login", Type: cty.String, Required: false},
 		"state_timeout":                &hcldec.AttrSpec{Name: "state_timeout", Type: cty.String, Required: false},
 		"source_image":                 &hcldec.AttrSpec{Name: "source_image", Type: cty.String, Required: false},
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
@@ -196,7 +191,6 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"network":                      &hcldec.AttrSpec{Name: "network", Type: cty.String, Required: false},
 		"private_ip":                   &hcldec.AttrSpec{Name: "private_ip", Type: cty.String, Required: false},
 		"public_ip":                    &hcldec.AttrSpec{Name: "public_ip", Type: cty.String, Required: false},
-		"public_netadp_service":        &hcldec.AttrSpec{Name: "public_netadp_service", Type: cty.String, Required: false},
 		"chroot_device":                &hcldec.AttrSpec{Name: "chroot_device", Type: cty.String, Required: false},
 		"chroot_disk":                  &hcldec.AttrSpec{Name: "chroot_disk", Type: cty.Bool, Required: false},
 		"chroot_disk_size":             &hcldec.AttrSpec{Name: "chroot_disk_size", Type: cty.Number, Required: false},

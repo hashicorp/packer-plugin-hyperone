@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	openapi "github.com/hyperonecom/h1-client-go"
 )
 
 type Artifact struct {
 	imageName string
 	imageID   string
-	client    *openapi.APIClient
+	state     multistep.StateBag
 
 	// StateData should store data such as GeneratedData
 	// to be shared with post-processors
@@ -43,7 +44,14 @@ func (a *Artifact) Destroy() error {
 		return nil
 	}
 
-	_, err := a.client.ImageApi.ImageDelete(context.TODO(), a.imageID)
+	client := a.state.Get("client").(*openapi.APIClient)
+	config := a.state.Get("config").(*Config)
+
+	_, err := client.
+		StorageProjectImageApi.
+		StorageProjectImageDelete(context.TODO(), config.Project, config.Location, a.imageID).
+		Execute()
+
 	if err != nil {
 		return err
 	}

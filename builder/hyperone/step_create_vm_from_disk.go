@@ -18,23 +18,32 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 	ui := state.Get("ui").(packersdk.Ui)
 	config := state.Get("config").(*Config)
 	sshKey := state.Get("ssh_public_key").(string)
-	chrootDiskID := state.Get("chroot_disk_id").(string)
+	// chrootDiskID := state.Get("chroot_disk_id").(string)
 
 	ui.Say("Creating VM from disk...")
 
-	options := openapi.VmCreate{
+	options := openapi.ComputeProjectVmCreate{
 		Name:    config.VmName,
 		Service: config.VmType,
-		Disk: []openapi.VmCreateDisk{
+		Disk:    []openapi.ComputeProjectVmCreateDisk{
+			// { //TODO
+			// 	Id: chrootDiskID,
+			// },
+		},
+		Credential: []openapi.ComputeProjectVmCreateCredential{
 			{
-				Id: chrootDiskID,
+				Type:  "ssh",
+				Value: sshKey,
 			},
 		},
-		SshKeys: []string{sshKey},
-		Boot:    false,
 	}
+	options.SetStart(false)
 
-	vm, _, err := client.VmApi.VmCreate(ctx, options)
+	vm, _, err := client.
+		ComputeProjectVmApi.
+		ComputeProjectVmCreate(ctx, config.Project, config.Location).
+		ComputeProjectVmCreate(options).
+		Execute()
 	if err != nil {
 		err := fmt.Errorf("error creating VM from disk: %s", formatOpenAPIError(err))
 		state.Put("error", err)
@@ -44,6 +53,7 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 
 	s.vmID = vm.Id
 	state.Put("vm_id", vm.Id)
+	state.Put("vm_uri", vm.Uri)
 
 	return multistep.ActionContinue
 }
@@ -56,7 +66,7 @@ func (s *stepCreateVMFromDisk) Cleanup(state multistep.StateBag) {
 	ui := state.Get("ui").(packersdk.Ui)
 
 	ui.Say(fmt.Sprintf("Deleting VM %s (from chroot disk)...", s.vmID))
-	err := deleteVMWithDisks(s.vmID, state)
+	err := deleteVMWithDisks(context.Background(), state, s.vmID)
 	if err != nil {
 		ui.Error(err.Error())
 	}

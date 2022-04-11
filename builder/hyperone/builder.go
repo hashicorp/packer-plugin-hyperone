@@ -11,6 +11,7 @@ import (
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 	openapi "github.com/hyperonecom/h1-client-go"
+	credentials "github.com/hyperonecom/h1-credentials-helper-go"
 )
 
 const BuilderID = "hyperone.builder"
@@ -30,14 +31,24 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	}
 
 	cfg := openapi.NewConfiguration()
-	cfg.AddDefaultHeader("x-auth-token", b.config.Token)
-	if b.config.Project != "" {
-		cfg.AddDefaultHeader("x-project", b.config.Project)
+
+	provider, err := credentials.GetPassportCredentialsHelper("") // empty string means that the library should look for passport file in ~/.h1/passport.json
+	// if you have this file in different location you can pass it to this function
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	token, err := provider.GetToken(cfg.Servers[0].URL)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	if b.config.APIURL != "" {
-		cfg.BasePath = b.config.APIURL
+		cfg.Servers[0].URL = b.config.APIURL
 	}
+
+	cfg.AddDefaultHeader("authorization", fmt.Sprintf("Bearer %s", token))
 
 	prefer := fmt.Sprintf("respond-async,wait=%d", int(b.config.StateTimeout.Seconds()))
 	cfg.AddDefaultHeader("Prefer", prefer)
@@ -107,7 +118,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	artifact := &Artifact{
 		imageID:   state.Get("image_id").(string),
 		imageName: state.Get("image_name").(string),
-		client:    b.client,
+		state:     state,
 		StateData: map[string]interface{}{"generated_data": state.Get("generated_data")},
 	}
 

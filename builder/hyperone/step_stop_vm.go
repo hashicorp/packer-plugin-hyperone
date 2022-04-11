@@ -15,10 +15,11 @@ func (s *stepStopVM) Run(ctx context.Context, state multistep.StateBag) multiste
 	client := state.Get("client").(*openapi.APIClient)
 	ui := state.Get("ui").(packersdk.Ui)
 	vmID := state.Get("vm_id").(string)
+	config := state.Get("config").(*Config)
 
 	ui.Say("Stopping VM...")
 
-	_, _, err := client.VmApi.VmActionStop(ctx, vmID)
+	_, _, err := client.ComputeProjectVmApi.ComputeProjectVmStop(ctx, config.Project, config.Location, vmID).Execute()
 	if err != nil {
 		err := fmt.Errorf("error stopping VM: %s", formatOpenAPIError(err))
 		state.Put("error", err)

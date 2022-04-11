@@ -15,19 +15,26 @@ type stepCreateImage struct {
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	client := state.Get("client").(*openapi.APIClient)
-	ui := state.Get("ui").(packersdk.Ui)
 	config := state.Get("config").(*Config)
-	vmID := state.Get("vm_id").(string)
+	ui := state.Get("ui").(packersdk.Ui)
+	vm := state.Get("vm_uri").(*string)
 
 	ui.Say("Creating image...")
 
-	image, _, err := client.ImageApi.ImageCreate(ctx, openapi.ImageCreate{
+	options := openapi.StorageProjectImageCreate{
 		Name:        config.ImageName,
-		Vm:          vmID,
-		Service:     config.ImageService,
-		Description: config.ImageDescription,
-		Tag:         config.ImageTags,
-	})
+		Vm:          vm,
+		Service:     &config.ImageService,
+		Description: &config.ImageDescription,
+		Tag:         convertTags(config.ImageTags),
+	}
+
+	image, _, err := client.
+		StorageProjectImageApi.
+		StorageProjectImageCreate(ctx, config.Project, config.Location).
+		StorageProjectImageCreate(options).
+		Execute()
+
 	if err != nil {
 		err := fmt.Errorf("error creating image: %s", formatOpenAPIError(err))
 		state.Put("error", err)
@@ -55,9 +62,14 @@ func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	}
 
 	client := state.Get("client").(*openapi.APIClient)
+	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packersdk.Ui)
 
-	_, err := client.ImageApi.ImageDelete(context.TODO(), s.imageID)
+	_, err := client.
+		StorageProjectImageApi.
+		StorageProjectImageDelete(context.TODO(), config.Project, config.Location, s.imageID).
+		Execute()
+
 	if err != nil {
 		ui.Error(fmt.Sprintf("error deleting image '%s' - consider deleting it manually: %s",
 			s.imageID, formatOpenAPIError(err)))

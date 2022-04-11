@@ -70,7 +70,7 @@ func captureOutput(command string, state multistep.StateBag) (string, error) {
 		Stdout:  &stdout,
 	}
 
-	log.Println(fmt.Sprintf("Executing command: %s", command))
+	log.Printf("Executing command: %s", command)
 
 	err := comm.Start(ctx, remoteCmd)
 	if err != nil {
