@@ -237,6 +237,10 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		errs = packersdk.MultiErrorAppend(errs, es...)
 	}
 
+	if c.Project == "" {
+		errs = packersdk.MultiErrorAppend(errs, errors.New("project type is required"))
+	}
+
 	if c.VmType == "" {
 		errs = packersdk.MultiErrorAppend(errs, errors.New("vm type is required"))
 	}
