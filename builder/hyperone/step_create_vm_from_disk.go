@@ -18,18 +18,13 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 	ui := state.Get("ui").(packersdk.Ui)
 	config := state.Get("config").(*Config)
 	sshKey := state.Get("ssh_public_key").(string)
-	// chrootDiskID := state.Get("chroot_disk_id").(string)
+	chrootDiskID := state.Get("chroot_disk_id").(string)
 
 	ui.Say("Creating VM from disk...")
 
 	options := openapi.ComputeProjectVmCreate{
 		Name:    config.VmName,
 		Service: config.VmType,
-		Disk:    []openapi.ComputeProjectVmCreateDisk{
-			// { //TODO
-			// 	Id: chrootDiskID,
-			// },
-		},
 		Credential: []openapi.ComputeProjectVmCreateCredential{
 			{
 				Type:  "ssh",
@@ -48,6 +43,20 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 
 	if err != nil {
 		err := fmt.Errorf("error creating VM from disk: %s", formatOpenAPIError(err))
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	refreshToken(state) //TODO move to h1-client-go
+	_, _, err = client.
+		ComputeProjectVmApi.
+		ComputeProjectVmDiskCreate(ctx, config.Project, config.Location, vm.Id).
+		ComputeProjectVmDiskCreate(openapi.ComputeProjectVmDiskCreate{Disk: chrootDiskID}).
+		Execute()
+
+	if err != nil {
+		err := fmt.Errorf("error creating VM from disk, attaching: %s", formatOpenAPIError(err))
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
