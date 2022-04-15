@@ -19,6 +19,7 @@ func (s *stepDetachDisk) Run(ctx context.Context, state multistep.StateBag) mult
 	chrootDiskID := state.Get("chroot_disk_id").(string)
 
 	ui.Say("Detaching chroot disk...")
+	refreshToken(state) //TODO move to h1-client-go
 	_, _, err := client.
 		StorageProjectDiskApi.
 		StorageProjectDiskDetach(ctx, config.Project, config.Location, chrootDiskID).

@@ -47,6 +47,7 @@ func (a *Artifact) Destroy() error {
 	client := a.state.Get("client").(*openapi.APIClient)
 	config := a.state.Get("config").(*Config)
 
+	refreshToken(a.state) //TODO move to h1-client-go
 	_, err := client.
 		StorageProjectImageApi.
 		StorageProjectImageDelete(context.TODO(), config.Project, config.Location, a.imageID).

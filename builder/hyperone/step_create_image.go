@@ -29,6 +29,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		Tag:         convertTags(config.ImageTags),
 	}
 
+	refreshToken(state) //TODO move to h1-client-go
 	image, _, err := client.
 		StorageProjectImageApi.
 		StorageProjectImageCreate(ctx, config.Project, config.Location).
@@ -65,6 +66,7 @@ func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packersdk.Ui)
 
+	refreshToken(state) //TODO move to h1-client-go
 	_, err := client.
 		StorageProjectImageApi.
 		StorageProjectImageDelete(context.TODO(), config.Project, config.Location, s.imageID).

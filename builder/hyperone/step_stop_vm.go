@@ -19,7 +19,12 @@ func (s *stepStopVM) Run(ctx context.Context, state multistep.StateBag) multiste
 
 	ui.Say("Stopping VM...")
 
-	_, _, err := client.ComputeProjectVmApi.ComputeProjectVmStop(ctx, config.Project, config.Location, vmID).Execute()
+	refreshToken(state) //TODO move to h1-client-go
+	_, _, err := client.
+		ComputeProjectVmApi.
+		ComputeProjectVmStop(ctx, config.Project, config.Location, vmID).
+		Execute()
+
 	if err != nil {
 		err := fmt.Errorf("error stopping VM: %s", formatOpenAPIError(err))
 		state.Put("error", err)

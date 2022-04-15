@@ -39,11 +39,13 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 	}
 	options.SetStart(false)
 
+	refreshToken(state) //TODO move to h1-client-go
 	vm, _, err := client.
 		ComputeProjectVmApi.
 		ComputeProjectVmCreate(ctx, config.Project, config.Location).
 		ComputeProjectVmCreate(options).
 		Execute()
+
 	if err != nil {
 		err := fmt.Errorf("error creating VM from disk: %s", formatOpenAPIError(err))
 		state.Put("error", err)

@@ -71,6 +71,7 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 		Username:     &config.Comm.SSHUsername,
 	}
 
+	refreshToken(state) //TODO move to h1-client-go
 	vm, _, err := client.
 		ComputeProjectVmApi.
 		ComputeProjectVmCreate(ctx, config.Project, config.Location).
@@ -91,13 +92,14 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 	// instance id inside of the provisioners, used in step_provision.
 	state.Put("instance_id", vm.Id)
 
+	refreshToken(state) //TODO move to h1-client-go
 	disks2, _, err := client.
 		ComputeProjectVmApi.
 		ComputeProjectVmDiskList(ctx, config.Project, config.Location, vm.Id).
 		Execute()
 
 	if err != nil {
-		err := fmt.Errorf("error listing hdd: %s", formatOpenAPIError(err))
+		err := fmt.Errorf("error listing disks: %s", formatOpenAPIError(err))
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
@@ -113,6 +115,7 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 		}
 	}
 
+	refreshToken(state) //TODO move to h1-client-go
 	netadp, _, err := client.
 		NetworkingProjectNetadpApi.
 		NetworkingProjectNetadpList(ctx, config.Project, config.Location).
@@ -133,6 +136,7 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 		return multistep.ActionHalt
 	}
 
+	refreshToken(state) //TODO move to h1-client-go
 	publicIP, err := associatePublicIP(ctx, config, client, netadp[0])
 	if err != nil {
 		err := fmt.Errorf("error associating IP: %s", formatOpenAPIError(err))

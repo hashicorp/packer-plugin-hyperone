@@ -12,14 +12,16 @@ import (
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 	openapi "github.com/hyperonecom/h1-client-go"
 	credentials "github.com/hyperonecom/h1-credentials-helper-go"
+	"github.com/hyperonecom/h1-credentials-helper-go/providers"
 )
 
 const BuilderID = "hyperone.builder"
 
 type Builder struct {
-	config Config
-	runner multistep.Runner
-	client *openapi.APIClient
+	config   Config
+	runner   multistep.Runner
+	client   *openapi.APIClient
+	provider providers.TokenAuthProvider
 }
 
 func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstructure().HCL2Spec() }
@@ -32,14 +34,11 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 
 	cfg := openapi.NewConfiguration()
 
-	provider, err := credentials.GetPassportCredentialsHelper("") // empty string means that the library should look for passport file in ~/.h1/passport.json
+	var err error
+
+	b.provider, err = credentials.GetPassportCredentialsHelper("") // empty string means that the library should look for passport file in ~/.h1/passport.json
 	// if you have this file in different location you can pass it to this function
 
-	if err != nil {
-		return nil, nil, err
-	}
-
-	token, err := provider.GetToken(cfg.Servers[0].URL)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,8 +46,6 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	if b.config.APIURL != "" {
 		cfg.Servers[0].URL = b.config.APIURL
 	}
-
-	cfg.AddDefaultHeader("authorization", fmt.Sprintf("Bearer %s", token))
 
 	prefer := fmt.Sprintf("respond-async,wait=%d", int(b.config.StateTimeout.Seconds()))
 	cfg.AddDefaultHeader("Prefer", prefer)
@@ -70,6 +67,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	}
 
 	state := &multistep.BasicStateBag{}
+	state.Put("provider", b.provider)
 	state.Put("config", &b.config)
 	state.Put("client", b.client)
 	state.Put("hook", hook)
