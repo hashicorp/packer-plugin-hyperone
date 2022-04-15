@@ -227,23 +227,39 @@ func (s *stepCreateVM) Cleanup(state multistep.StateBag) {
 func deleteVMWithDisks(ctx context.Context, state multistep.StateBag, vmID string) error {
 	client := state.Get("client").(*openapi.APIClient)
 	config := state.Get("config").(*Config)
-	// hdds, _, err := client.VmApi.VmListHdd(context.TODO(), vmID)
-	// if err != nil {
-	// 	return fmt.Errorf("error listing hdd: %s", formatOpenAPIError(err))
-	// }
+	ui := state.Get("ui").(packersdk.Ui)
 
-	// deleteOptions := openapi.VmDelete{}
-	// for _, hdd := range hdds {
-	// 	deleteOptions.RemoveDisks = append(deleteOptions.RemoveDisks, hdd.Disk.Id)
-	// }
+	refreshToken(state) //TODO move to h1-client-go
+	disks, _, err := client.
+		ComputeProjectVmApi.
+		ComputeProjectVmDiskList(ctx, config.Project, config.Location, vmID).
+		Execute()
 
-	_, err := client.
+	if err != nil {
+		return fmt.Errorf("error listing disks: %s", formatOpenAPIError(err))
+	}
+
+	refreshToken(state) //TODO move to h1-client-go
+	_, err = client.
 		ComputeProjectVmApi.
 		ComputeProjectVmDelete(ctx, config.Project, config.Location, vmID).
 		Execute()
 
 	if err != nil {
-		return fmt.Errorf("Error deleting server '%s' - please delete it manually: %s", vmID, formatOpenAPIError(err))
+		return fmt.Errorf("error deleting server '%s' - please delete it manually: %s", vmID, formatOpenAPIError(err))
+	}
+
+	for _, disk := range disks {
+		ui.Say(fmt.Sprintf("Deleting Disk %s...", disk.Id))
+		refreshToken(state) //TODO move to h1-client-go
+		_, err = client.
+			StorageProjectDiskApi.
+			StorageProjectDiskDelete(ctx, config.Project, config.Location, disk.Id).
+			Execute()
+
+		if err != nil {
+			return fmt.Errorf("error deleting disk '%s' - please delete it manually: %s", disk.Id, formatOpenAPIError(err))
+		}
 	}
 
 	return nil
