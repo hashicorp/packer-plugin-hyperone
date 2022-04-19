@@ -108,9 +108,7 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 	for _, disk := range disks2 {
 		if disk.Name == chrootDiskName {
 			state.Put("chroot_disk_id", disk.Id)
-			// controllerNumber := strings.ToLower(strings.Trim(hdd.ControllerNumber, "{}"))
-			// state.Put("chroot_controller_number", controllerNumber)
-			// state.Put("chroot_controller_location", int(hdd.ControllerLocation))
+			state.Put("chroot_disk_uri", disk.Uri)
 			break
 		}
 	}

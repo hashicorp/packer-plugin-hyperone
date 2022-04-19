@@ -18,7 +18,7 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 	ui := state.Get("ui").(packersdk.Ui)
 	config := state.Get("config").(*Config)
 	sshKey := state.Get("ssh_public_key").(string)
-	chrootDiskID := state.Get("chroot_disk_id").(string)
+	chrootDiskUri := state.Get("chroot_disk_uri").(*string)
 
 	ui.Say("Creating VM from disk...")
 
@@ -52,7 +52,7 @@ func (s *stepCreateVMFromDisk) Run(ctx context.Context, state multistep.StateBag
 	_, _, err = client.
 		ComputeProjectVmApi.
 		ComputeProjectVmDiskCreate(ctx, config.Project, config.Location, vm.Id).
-		ComputeProjectVmDiskCreate(openapi.ComputeProjectVmDiskCreate{Disk: chrootDiskID}).
+		ComputeProjectVmDiskCreate(openapi.ComputeProjectVmDiskCreate{Disk: *chrootDiskUri}).
 		Execute()
 
 	if err != nil {
