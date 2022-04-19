@@ -9,10 +9,6 @@ import (
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
-const (
-	vmBusPath = "/sys/bus/vmbus/devices"
-)
-
 type stepPrepareDevice struct{}
 
 func (s *stepPrepareDevice) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
