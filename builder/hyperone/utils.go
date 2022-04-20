@@ -16,7 +16,8 @@ import (
 )
 
 func formatOpenAPIError(err error) string {
-	openAPIError, ok := err.(openapi.GenericOpenAPIError)
+	openAPIError, ok := err.(*openapi.GenericOpenAPIError)
+
 	if !ok {
 		return err.Error()
 	}
