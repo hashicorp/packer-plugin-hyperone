@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/hashicorp/hcl/v2 v2.11.1
 	github.com/hashicorp/packer-plugin-sdk v0.2.11
-	github.com/hyperonecom/h1-client-go v0.0.0-20220412172149-dfac3cc747ae
+	github.com/hyperonecom/h1-client-go v0.0.0-20220420155144-3e4817892e7c
 	github.com/hyperonecom/h1-credentials-helper-go v0.0.0-20220413103723-b8814836b2c9
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/stretchr/testify v1.7.1

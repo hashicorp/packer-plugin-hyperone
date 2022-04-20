@@ -238,7 +238,7 @@ func deleteVMWithDisks(ctx context.Context, state multistep.StateBag, vmID strin
 	}
 
 	refreshToken(state) //TODO move to h1-client-go
-	_, err = client.
+	_, _, err = client.
 		ComputeProjectVmApi.
 		ComputeProjectVmDelete(ctx, config.Project, config.Location, vmID).
 		Execute()
@@ -250,7 +250,7 @@ func deleteVMWithDisks(ctx context.Context, state multistep.StateBag, vmID strin
 	for _, disk := range disks {
 		ui.Say(fmt.Sprintf("Deleting Disk %s...", disk.Id))
 		refreshToken(state) //TODO move to h1-client-go
-		_, err = client.
+		_, _, err = client.
 			StorageProjectDiskApi.
 			StorageProjectDiskDelete(ctx, config.Project, config.Location, disk.Id).
 			Execute()

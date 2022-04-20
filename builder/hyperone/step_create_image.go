@@ -67,7 +67,7 @@ func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	ui := state.Get("ui").(packersdk.Ui)
 
 	refreshToken(state) //TODO move to h1-client-go
-	_, err := client.
+	_, _, err := client.
 		StorageProjectImageApi.
 		StorageProjectImageDelete(context.TODO(), config.Project, config.Location, s.imageID).
 		Execute()

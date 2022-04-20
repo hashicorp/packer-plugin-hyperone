@@ -352,6 +352,12 @@ github.com/hashicorp/yamux v0.0.0-20210826001029-26ff87cf9493/go.mod h1:CtWFDAQg
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/hyperonecom/h1-client-go v0.0.0-20220412172149-dfac3cc747ae h1:Ip1ovj8mIl+V5MsAwcL3CmRXAPLGi0xnbPObPxE0SQc=
 github.com/hyperonecom/h1-client-go v0.0.0-20220412172149-dfac3cc747ae/go.mod h1:faV7zzZ3JrI9j8dRKjJd9w0VLI4vJunLHZOiZjDq/D0=
+github.com/hyperonecom/h1-client-go v0.0.0-20220420153854-53a41968ac6f h1:CxtUoIk3cchJKb3AMW3wOVDbQMJHqVixhs2wNE3CXe8=
+github.com/hyperonecom/h1-client-go v0.0.0-20220420153854-53a41968ac6f/go.mod h1:faV7zzZ3JrI9j8dRKjJd9w0VLI4vJunLHZOiZjDq/D0=
+github.com/hyperonecom/h1-client-go v0.0.0-20220420154230-d9d3c85acd68 h1:HVStEOqnwYxsUZkBQSP4kCTdok0DJxq84kJiQ/LnJM0=
+github.com/hyperonecom/h1-client-go v0.0.0-20220420154230-d9d3c85acd68/go.mod h1:faV7zzZ3JrI9j8dRKjJd9w0VLI4vJunLHZOiZjDq/D0=
+github.com/hyperonecom/h1-client-go v0.0.0-20220420155144-3e4817892e7c h1:pT4ZzAPxat2sDrl4T6fAkLdZD3tIeQdePU0i9YvNpok=
+github.com/hyperonecom/h1-client-go v0.0.0-20220420155144-3e4817892e7c/go.mod h1:faV7zzZ3JrI9j8dRKjJd9w0VLI4vJunLHZOiZjDq/D0=
 github.com/hyperonecom/h1-credentials-helper-go v0.0.0-20220413103723-b8814836b2c9 h1:vGNzLKZ4Z0YuuWcQd33itS6HVVLa0mNOv/wAK+Qg3n8=
 github.com/hyperonecom/h1-credentials-helper-go v0.0.0-20220413103723-b8814836b2c9/go.mod h1:MjSFs0hPbmOaF3IZOE5OWWWK53gmWfaU3ea+mkY4R4I=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
