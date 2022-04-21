@@ -35,9 +35,7 @@ type Config struct {
 	APIURL string `mapstructure:"api_url" required:"false"`
 	// Location
 	Location string `mapstructure:"location" required:"true"`
-	// The id or name of the project. This field is required
-	// only if using session tokens. It should be skipped when using service
-	// account authentication.
+	// The id of the project. This field is required
 	Project string `mapstructure:"project" required:"true"`
 	// Timeout for waiting on the API to complete
 	// a request. Defaults to 5m.
