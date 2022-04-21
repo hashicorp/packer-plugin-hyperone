@@ -69,6 +69,7 @@ type FlatConfig struct {
 	WinRMInsecure             *bool                  `mapstructure:"winrm_insecure" cty:"winrm_insecure" hcl:"winrm_insecure"`
 	WinRMUseNTLM              *bool                  `mapstructure:"winrm_use_ntlm" cty:"winrm_use_ntlm" hcl:"winrm_use_ntlm"`
 	APIURL                    *string                `mapstructure:"api_url" required:"false" cty:"api_url" hcl:"api_url"`
+	Location                  *string                `mapstructure:"location" required:"true" cty:"location" hcl:"location"`
 	Project                   *string                `mapstructure:"project" required:"true" cty:"project" hcl:"project"`
 	StateTimeout              *string                `mapstructure:"state_timeout" required:"false" cty:"state_timeout" hcl:"state_timeout"`
 	SourceImage               *string                `mapstructure:"source_image" required:"true" cty:"source_image" hcl:"source_image"`
@@ -173,6 +174,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"winrm_insecure":               &hcldec.AttrSpec{Name: "winrm_insecure", Type: cty.Bool, Required: false},
 		"winrm_use_ntlm":               &hcldec.AttrSpec{Name: "winrm_use_ntlm", Type: cty.Bool, Required: false},
 		"api_url":                      &hcldec.AttrSpec{Name: "api_url", Type: cty.String, Required: false},
+		"location":                     &hcldec.AttrSpec{Name: "location", Type: cty.String, Required: false},
 		"project":                      &hcldec.AttrSpec{Name: "project", Type: cty.String, Required: false},
 		"state_timeout":                &hcldec.AttrSpec{Name: "state_timeout", Type: cty.String, Required: false},
 		"source_image":                 &hcldec.AttrSpec{Name: "source_image", Type: cty.String, Required: false},
