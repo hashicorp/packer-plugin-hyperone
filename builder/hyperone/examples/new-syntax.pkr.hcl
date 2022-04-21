@@ -1,20 +1,16 @@
-variable "token" {
-  type = string
-}
-
 variable "project" {
   type = string
 }
 
 source "hyperone" "new-syntax" {
-  token = var.token
-  project = var.project
+  project      = var.project
+  network      = "public"
   source_image = "debian"
-  disk_size = 10
-  vm_type = "a1.nano"
-  image_name = "packerbats-hcl-{{timestamp}}"
+  disk_size    = 10
+  vm_type      = "a1.nano"
+  image_name   = "packerbats-hcl-{{timestamp}}"
   image_tags = {
-      key="value"
+    key = "value"
   }
 }
 
@@ -25,8 +21,8 @@ build {
 
   provisioner "shell" {
     inline = [
-      "apt-get update",
-      "apt-get upgrade -y"
+      "sudo apt-get update",
+      "sudo apt-get upgrade -y"
     ]
   }
 }
