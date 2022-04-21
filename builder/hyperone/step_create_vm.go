@@ -156,13 +156,8 @@ func pickNetAdapter(config *Config) openapi.ComputeProjectVmCreateNetadp {
 			ret.Ip = []string{config.PublicIP}
 		}
 	} else {
-		var privateIPs []string
-
-		if config.PrivateIP == "" {
-			privateIPs = nil
-		} else {
-			privateIPs = []string{config.PrivateIP}
-			ret.Ip = privateIPs
+		if config.PrivateIP != "" {
+			ret.Ip = []string{config.PrivateIP}
 		}
 
 		ret.Network = config.Network

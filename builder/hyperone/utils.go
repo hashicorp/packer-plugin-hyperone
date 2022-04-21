@@ -91,7 +91,7 @@ func captureOutput(command string, state multistep.StateBag) (string, error) {
 	return strings.TrimSpace(stdout.String()), nil
 }
 
-func refreshToken(state multistep.StateBag) error {
+func refreshToken(state multistep.StateBag) {
 	provider := state.Get("provider").(providers.TokenAuthProvider)
 	client := state.Get("client").(*openapi.APIClient)
 	cfg := client.GetConfig()
@@ -103,10 +103,8 @@ func refreshToken(state multistep.StateBag) error {
 
 	token, err := provider.GetToken(audiance)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	cfg.AddDefaultHeader("authorization", fmt.Sprintf("Bearer %s", token))
-
-	return nil
 }
