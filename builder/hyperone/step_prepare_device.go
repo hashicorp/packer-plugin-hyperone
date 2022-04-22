@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
@@ -26,7 +27,7 @@ func (s *stepPrepareDevice) Run(ctx context.Context, state multistep.StateBag) m
 
 	log.Println("Searching for available device...")
 
-	cmd := fmt.Sprintf("readlink -f /dev/disk/by-id/scsi-*%s", chrootDiskID[12:])
+	cmd := fmt.Sprintf("readlink -f /dev/disk/by-id/scsi-*%s | uniq", chrootDiskID[12:])
 
 	device, err := captureOutput(cmd, state)
 	if err != nil {
