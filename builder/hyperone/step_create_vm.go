@@ -38,6 +38,17 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 
 	netAdapter := pickNetAdapter(config)
 
+	sshKeys := append([]string{sshKey}, config.SSHKeys...)
+
+	credential := []openapi.ComputeProjectVmCreateCredential{}
+
+	for _, key := range sshKeys {
+		credential = append(credential, openapi.ComputeProjectVmCreateCredential{
+			Type:  "ssh",
+			Value: key,
+		})
+	}
+
 	disks := []openapi.ComputeProjectVmCreateDisk{
 		{
 			Name:    config.DiskName,
@@ -55,15 +66,10 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 	}
 
 	options := openapi.ComputeProjectVmCreate{
-		Name:    config.VmName,
-		Service: config.VmType,
-		Image:   &config.SourceImage,
-		Credential: []openapi.ComputeProjectVmCreateCredential{
-			{
-				Type:  "ssh",
-				Value: sshKey,
-			},
-		},
+		Name:         config.VmName,
+		Service:      config.VmType,
+		Image:        &config.SourceImage,
+		Credential:   credential,
 		Disk:         disks,
 		Netadp:       []openapi.ComputeProjectVmCreateNetadp{netAdapter},
 		UserMetadata: &config.UserData,
