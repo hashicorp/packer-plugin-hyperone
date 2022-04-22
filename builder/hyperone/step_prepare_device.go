@@ -43,6 +43,13 @@ func (s *stepPrepareDevice) Run(ctx context.Context, state multistep.StateBag) m
 		return multistep.ActionHalt
 	}
 
+	if strings.Contains(device, "\n") {
+		err := fmt.Errorf("FIXME: multiple devices found")
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
 	ui.Say(fmt.Sprintf("Found device: %s", device))
 	state.Put("device", device)
 	return multistep.ActionContinue
