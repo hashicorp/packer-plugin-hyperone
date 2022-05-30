@@ -1,3 +1,12 @@
+packer {
+  required_plugins {
+    hyperone = {
+      version = ">= 2.0.0"
+      source  = "github.com/hashicorp/hyperone"
+    }
+  }
+}
+
 variable "project" {
   type = string
 }
