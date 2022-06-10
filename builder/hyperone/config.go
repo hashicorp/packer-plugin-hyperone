@@ -6,30 +6,25 @@ package hyperone
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/hashicorp/packer-plugin-sdk/common"
 	"github.com/hashicorp/packer-plugin-sdk/communicator"
-	"github.com/hashicorp/packer-plugin-sdk/json"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/hashicorp/packer-plugin-sdk/template/config"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 	"github.com/hashicorp/packer-plugin-sdk/uuid"
-	"github.com/mitchellh/go-homedir"
 	"github.com/mitchellh/mapstructure"
 )
 
 const (
-	configPath = "~/.h1-cli/conf.json"
-	tokenEnv   = "HYPERONE_TOKEN"
-
 	defaultDiskType     = "ssd"
 	defaultImageService = "564639bc052c084e2f2e3266"
 	defaultStateTimeout = 5 * time.Minute
 	defaultUserName     = "guru"
+	defaultLocation     = "pl-waw-1"
 )
 
 type Config struct {
@@ -38,17 +33,10 @@ type Config struct {
 	// Custom API endpoint URL, compatible with HyperOne.
 	// It can also be specified via environment variable HYPERONE_API_URL.
 	APIURL string `mapstructure:"api_url" required:"false"`
-	// The authentication token used to access your account.
-	// This can be either a session token or a service account token.
-	// If not defined, the builder will attempt to find it in the following order:
-	Token string `mapstructure:"token" required:"true"`
-	// The id or name of the project. This field is required
-	// only if using session tokens. It should be skipped when using service
-	// account authentication.
+	// Location
+	Location string `mapstructure:"location" required:"true"`
+	// The id of the project. This field is required
 	Project string `mapstructure:"project" required:"true"`
-	// Login (an e-mail) on HyperOne platform. Set this
-	// if you want to fetch the token by SSH authentication.
-	TokenLogin string `mapstructure:"token_login" required:"false"`
 	// Timeout for waiting on the API to complete
 	// a request. Defaults to 5m.
 	StateTimeout time.Duration `mapstructure:"state_timeout" required:"false"`
@@ -95,9 +83,6 @@ type Config struct {
 	// the created server. If network is chosen, the public IP will be associated
 	// with server's private IP.
 	PublicIP string `mapstructure:"public_ip" required:"false"`
-	// Custom service of public network adapter.
-	// Can be useful when using custom api_url. Defaults to public.
-	PublicNetAdpService string `mapstructure:"public_netadp_service" required:"false"`
 
 	ChrootDevice    string     `mapstructure:"chroot_device"`
 	ChrootDisk      bool       `mapstructure:"chroot_disk"`
@@ -137,6 +122,8 @@ type Config struct {
 
 func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 
+	defaultName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
+
 	var md mapstructure.Metadata
 	err := config.Decode(c, &config.DecodeOpts{
 		Metadata:           &md,
@@ -156,11 +143,6 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		return nil, err
 	}
 
-	cliConfig, err := loadCLIConfig()
-	if err != nil {
-		return nil, err
-	}
-
 	// Defaults
 	if c.Comm.SSHUsername == "" {
 		c.Comm.SSHUsername = defaultUserName
@@ -174,36 +156,16 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		c.APIURL = os.Getenv("HYPERONE_API_URL")
 	}
 
-	if c.Token == "" {
-		c.Token = os.Getenv(tokenEnv)
-
-		if c.Token == "" {
-			c.Token = cliConfig.Profile.APIKey
-		}
-
-		// Fetching token by SSH is available only for the default API endpoint
-		if c.TokenLogin != "" && c.APIURL == "" {
-			c.Token, err = fetchTokenBySSH(c.TokenLogin)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if c.Project == "" {
-		c.Project = cliConfig.Profile.Project.ID
-	}
-
 	if c.StateTimeout == 0 {
 		c.StateTimeout = defaultStateTimeout
 	}
 
 	if c.ImageName == "" {
-		name, err := interpolate.Render("packer-{{timestamp}}", nil)
-		if err != nil {
-			return nil, err
-		}
-		c.ImageName = name
+		c.ImageName = defaultName
+	}
+
+	if c.DiskName == "" {
+		c.DiskName = defaultName
 	}
 
 	if c.ImageService == "" {
@@ -211,15 +173,15 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if c.VmName == "" {
-		c.VmName = fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
+		c.VmName = defaultName
+	}
+
+	if c.Location == "" {
+		c.Location = defaultLocation
 	}
 
 	if c.DiskType == "" {
 		c.DiskType = defaultDiskType
-	}
-
-	if c.PublicNetAdpService == "" {
-		c.PublicNetAdpService = "public"
 	}
 
 	if c.ChrootCommandWrapper == "" {
@@ -273,8 +235,8 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		errs = packersdk.MultiErrorAppend(errs, es...)
 	}
 
-	if c.Token == "" {
-		errs = packersdk.MultiErrorAppend(errs, errors.New("token is required"))
+	if c.Project == "" {
+		errs = packersdk.MultiErrorAppend(errs, errors.New("project type is required"))
 	}
 
 	if c.VmType == "" {
@@ -307,44 +269,7 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		return nil, errs
 	}
 
-	packersdk.LogSecretFilter.Set(c.Token)
-
 	return nil, nil
-}
-
-type cliConfig struct {
-	Profile struct {
-		APIKey  string `json:"apiKey"`
-		Project struct {
-			ID string `json:"id"`
-		} `json:"project"`
-	} `json:"profile"`
-}
-
-func loadCLIConfig() (cliConfig, error) {
-	path, err := homedir.Expand(configPath)
-	if err != nil {
-		return cliConfig{}, err
-	}
-
-	_, err = os.Stat(path)
-	if err != nil {
-		// Config not found
-		return cliConfig{}, nil
-	}
-
-	content, err := ioutil.ReadFile(path)
-	if err != nil {
-		return cliConfig{}, err
-	}
-
-	var c cliConfig
-	err = json.Unmarshal(content, &c)
-	if err != nil {
-		return cliConfig{}, err
-	}
-
-	return c, nil
 }
 
 func getPublicIP(state multistep.StateBag) (string, error) {

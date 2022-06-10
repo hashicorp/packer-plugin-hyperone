@@ -8,25 +8,20 @@ packer {
 }
 
 variable "project" {
-  type = string
+  type    = string
+  default = env("HYPERONE_PROJECT")
 }
 
-source "hyperone" "new-syntax" {
-  project      = var.project
-  network      = "public"
-  source_image = "debian"
+source "hyperone" "demo" {
   disk_size    = 10
+  network      = "public"
+  project      = var.project
+  source_image = "debian"
   vm_type      = "a1.nano"
-  image_name   = "packerbats-hcl-{{timestamp}}"
-  image_tags = {
-    key = "value"
-  }
 }
 
 build {
-  sources = [
-    "source.hyperone.new-syntax"
-  ]
+  sources = ["source.hyperone.demo"]
 
   provisioner "shell" {
     inline = [
@@ -34,4 +29,5 @@ build {
       "sudo apt-get upgrade -y"
     ]
   }
+
 }

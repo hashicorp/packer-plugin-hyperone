@@ -5,16 +5,19 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 	openapi "github.com/hyperonecom/h1-client-go"
+	"github.com/hyperonecom/h1-credentials-helper-go/providers"
 )
 
 func formatOpenAPIError(err error) string {
-	openAPIError, ok := err.(openapi.GenericOpenAPIError)
+	openAPIError, ok := err.(*openapi.GenericOpenAPIError)
+
 	if !ok {
 		return err.Error()
 	}
@@ -70,7 +73,7 @@ func captureOutput(command string, state multistep.StateBag) (string, error) {
 		Stdout:  &stdout,
 	}
 
-	log.Println(fmt.Sprintf("Executing command: %s", command))
+	log.Printf("Executing command: %s", command)
 
 	err := comm.Start(ctx, remoteCmd)
 	if err != nil {
@@ -86,4 +89,22 @@ func captureOutput(command string, state multistep.StateBag) (string, error) {
 	}
 
 	return strings.TrimSpace(stdout.String()), nil
+}
+
+func refreshToken(state multistep.StateBag) {
+	provider := state.Get("provider").(providers.TokenAuthProvider)
+	client := state.Get("client").(*openapi.APIClient)
+	cfg := client.GetConfig()
+
+	audiance := os.Getenv("HYPERONE_AUDIENCE")
+	if audiance == "" {
+		audiance = cfg.Servers[0].URL
+	}
+
+	token, err := provider.GetToken(audiance)
+	if err != nil {
+		panic(err)
+	}
+
+	cfg.AddDefaultHeader("authorization", fmt.Sprintf("Bearer %s", token))
 }

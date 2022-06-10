@@ -11,14 +11,17 @@ import (
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 	openapi "github.com/hyperonecom/h1-client-go"
+	credentials "github.com/hyperonecom/h1-credentials-helper-go"
+	"github.com/hyperonecom/h1-credentials-helper-go/providers"
 )
 
 const BuilderID = "hyperone.builder"
 
 type Builder struct {
-	config Config
-	runner multistep.Runner
-	client *openapi.APIClient
+	config   Config
+	runner   multistep.Runner
+	client   *openapi.APIClient
+	provider providers.TokenAuthProvider
 }
 
 func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstructure().HCL2Spec() }
@@ -30,13 +33,18 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	}
 
 	cfg := openapi.NewConfiguration()
-	cfg.AddDefaultHeader("x-auth-token", b.config.Token)
-	if b.config.Project != "" {
-		cfg.AddDefaultHeader("x-project", b.config.Project)
+
+	var err error
+
+	b.provider, err = credentials.GetPassportCredentialsHelper("") // empty string means that the library should look for passport file in ~/.h1/passport.json
+	// if you have this file in different location you can pass it to this function
+
+	if err != nil {
+		return nil, nil, err
 	}
 
 	if b.config.APIURL != "" {
-		cfg.BasePath = b.config.APIURL
+		cfg.Servers[0].URL = b.config.APIURL
 	}
 
 	prefer := fmt.Sprintf("respond-async,wait=%d", int(b.config.StateTimeout.Seconds()))
@@ -59,6 +67,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	}
 
 	state := &multistep.BasicStateBag{}
+	state.Put("provider", b.provider)
 	state.Put("config", &b.config)
 	state.Put("client", b.client)
 	state.Put("hook", hook)
@@ -107,7 +116,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	artifact := &Artifact{
 		imageID:   state.Get("image_id").(string),
 		imageName: state.Get("image_name").(string),
-		client:    b.client,
+		state:     state,
 		StateData: map[string]interface{}{"generated_data": state.Get("generated_data")},
 	}
 

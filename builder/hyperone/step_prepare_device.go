@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
-)
-
-const (
-	vmBusPath = "/sys/bus/vmbus/devices"
 )
 
 type stepPrepareDevice struct{}
@@ -24,15 +21,15 @@ func (s *stepPrepareDevice) Run(ctx context.Context, state multistep.StateBag) m
 		return multistep.ActionContinue
 	}
 
-	controllerNumber := state.Get("chroot_controller_number").(string)
-	controllerLocation := state.Get("chroot_controller_location").(int)
+	// controllerNumber := state.Get("chroot_controller_number").(string)
+	// controllerLocation := state.Get("chroot_controller_location").(int)
+	chrootDiskID := state.Get("chroot_disk_id").(string)
 
 	log.Println("Searching for available device...")
 
-	cmd := fmt.Sprintf("find %s/%s/ -path *:%d/block -exec ls {} \\;",
-		vmBusPath, controllerNumber, controllerLocation)
+	cmd := fmt.Sprintf("readlink -f /dev/disk/by-id/scsi-*%s | uniq", chrootDiskID[12:])
 
-	block, err := captureOutput(cmd, state)
+	device, err := captureOutput(cmd, state)
 	if err != nil {
 		err := fmt.Errorf("error finding available device: %s", err)
 		state.Put("error", err)
@@ -40,14 +37,19 @@ func (s *stepPrepareDevice) Run(ctx context.Context, state multistep.StateBag) m
 		return multistep.ActionHalt
 	}
 
-	if block == "" {
+	if device == "" {
 		err := fmt.Errorf("device not found")
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
-	device := fmt.Sprintf("/dev/%s", block)
+	if strings.Contains(device, "\n") {
+		err := fmt.Errorf("FIXME: multiple devices found")
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
 
 	ui.Say(fmt.Sprintf("Found device: %s", device))
 	state.Put("device", device)

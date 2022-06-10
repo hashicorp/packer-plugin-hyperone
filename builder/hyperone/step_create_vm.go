@@ -3,12 +3,22 @@ package hyperone
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 	openapi "github.com/hyperonecom/h1-client-go"
 )
+
+func convertTags(list map[string]string) []openapi.Tag {
+	result := make([]openapi.Tag, len(list))
+
+	index := 0
+	for key, value := range list {
+		result[index] = openapi.Tag{Key: key, Value: value}
+		index++
+	}
+	return result
+}
 
 type stepCreateVM struct {
 	vmID string
@@ -28,37 +38,52 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 
 	netAdapter := pickNetAdapter(config)
 
-	var sshKeys = []string{sshKey}
-	sshKeys = append(sshKeys, config.SSHKeys...)
+	sshKeys := append([]string{sshKey}, config.SSHKeys...)
 
-	disks := []openapi.VmCreateDisk{
+	credential := []openapi.ComputeProjectVmCreateCredential{}
+
+	for _, key := range sshKeys {
+		credential = append(credential, openapi.ComputeProjectVmCreateCredential{
+			Type:  "ssh",
+			Value: key,
+		})
+	}
+
+	disks := []openapi.ComputeProjectVmCreateDisk{
 		{
+			Name:    config.DiskName,
 			Service: config.DiskType,
 			Size:    config.DiskSize,
 		},
 	}
 
 	if config.ChrootDisk {
-		disks = append(disks, openapi.VmCreateDisk{
+		disks = append(disks, openapi.ComputeProjectVmCreateDisk{
 			Service: config.ChrootDiskType,
 			Size:    config.ChrootDiskSize,
 			Name:    chrootDiskName,
 		})
 	}
 
-	options := openapi.VmCreate{
+	options := openapi.ComputeProjectVmCreate{
 		Name:         config.VmName,
-		Image:        config.SourceImage,
 		Service:      config.VmType,
-		SshKeys:      sshKeys,
+		Image:        &config.SourceImage,
+		Credential:   credential,
 		Disk:         disks,
-		Netadp:       []openapi.VmCreateNetadp{netAdapter},
-		UserMetadata: config.UserData,
-		Tag:          config.VmTags,
-		Username:     config.Comm.SSHUsername,
+		Netadp:       []openapi.ComputeProjectVmCreateNetadp{netAdapter},
+		UserMetadata: &config.UserData,
+		Tag:          convertTags(config.VmTags),
+		Username:     &config.Comm.SSHUsername,
 	}
 
-	vm, _, err := client.VmApi.VmCreate(ctx, options)
+	refreshToken(state) //TODO move to h1-client-go
+	vm, _, err := client.
+		ComputeProjectVmApi.
+		ComputeProjectVmCreate(ctx, config.Project, config.Location).
+		ComputeProjectVmCreate(options).
+		Execute()
+
 	if err != nil {
 		err := fmt.Errorf("error creating VM: %s", formatOpenAPIError(err))
 		state.Put("error", err)
@@ -68,29 +93,39 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 
 	s.vmID = vm.Id
 	state.Put("vm_id", vm.Id)
+	state.Put("vm_uri", vm.Uri)
 	// instance_id is the generic term used so that users can have access to the
 	// instance id inside of the provisioners, used in step_provision.
 	state.Put("instance_id", vm.Id)
 
-	hdds, _, err := client.VmApi.VmListHdd(ctx, vm.Id)
+	refreshToken(state) //TODO move to h1-client-go
+	disks2, _, err := client.
+		ComputeProjectVmApi.
+		ComputeProjectVmDiskList(ctx, config.Project, config.Location, vm.Id).
+		Execute()
+
 	if err != nil {
-		err := fmt.Errorf("error listing hdd: %s", formatOpenAPIError(err))
+		err := fmt.Errorf("error listing disks: %s", formatOpenAPIError(err))
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
-	for _, hdd := range hdds {
-		if hdd.Disk.Name == chrootDiskName {
-			state.Put("chroot_disk_id", hdd.Disk.Id)
-			controllerNumber := strings.ToLower(strings.Trim(hdd.ControllerNumber, "{}"))
-			state.Put("chroot_controller_number", controllerNumber)
-			state.Put("chroot_controller_location", int(hdd.ControllerLocation))
+	for _, disk := range disks2 {
+		if disk.Name == chrootDiskName {
+			state.Put("chroot_disk_id", disk.Id)
+			state.Put("chroot_disk_uri", disk.Uri)
 			break
 		}
 	}
 
-	netadp, _, err := client.VmApi.VmListNetadp(ctx, vm.Id)
+	refreshToken(state) //TODO move to h1-client-go
+	netadp, _, err := client.
+		NetworkingProjectNetadpApi.
+		NetworkingProjectNetadpList(ctx, config.Project, config.Location).
+		AssignedId(vm.Id).
+		Execute()
+
 	if err != nil {
 		err := fmt.Errorf("error listing netadp: %s", formatOpenAPIError(err))
 		state.Put("error", err)
@@ -105,6 +140,7 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 		return multistep.ActionHalt
 	}
 
+	refreshToken(state) //TODO move to h1-client-go
 	publicIP, err := associatePublicIP(ctx, config, client, netadp[0])
 	if err != nil {
 		err := fmt.Errorf("error associating IP: %s", formatOpenAPIError(err))
@@ -118,54 +154,59 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 	return multistep.ActionContinue
 }
 
-func pickNetAdapter(config *Config) openapi.VmCreateNetadp {
+func pickNetAdapter(config *Config) openapi.ComputeProjectVmCreateNetadp {
+	ret := openapi.ComputeProjectVmCreateNetadp{}
+
 	if config.Network == "" {
 		if config.PublicIP != "" {
-			return openapi.VmCreateNetadp{
-				Service: config.PublicNetAdpService,
-				Ip:      []string{config.PublicIP},
-			}
+			ret.Ip = []string{config.PublicIP}
 		}
 	} else {
-		var privateIPs []string
-
-		if config.PrivateIP == "" {
-			privateIPs = nil
-		} else {
-			privateIPs = []string{config.PrivateIP}
+		if config.PrivateIP != "" {
+			ret.Ip = []string{config.PrivateIP}
 		}
 
-		return openapi.VmCreateNetadp{
-			Service: "private",
-			Network: config.Network,
-			Ip:      privateIPs,
-		}
+		ret.Network = config.Network
 	}
 
-	return openapi.VmCreateNetadp{
-		Service: config.PublicNetAdpService,
-	}
+	return ret
 }
 
 func associatePublicIP(ctx context.Context, config *Config, client *openapi.APIClient, netadp openapi.Netadp) (string, error) {
-	if config.Network == "" || config.PublicIP == "" {
-		// Public IP belongs to attached net adapter
-		return netadp.Ip[0].Address, nil
-	}
 
-	var privateIP string
-	if config.PrivateIP == "" {
-		privateIP = netadp.Ip[0].Id
-	} else {
-		privateIP = config.PrivateIP
-	}
+	ips, _, err := client.
+		NetworkingProjectIpApi.
+		NetworkingProjectIpList(ctx, config.Project, config.Location).
+		AssociatedNetadp(netadp.Id).
+		Execute()
 
-	ip, _, err := client.IpApi.IpActionAssociate(ctx, config.PublicIP, openapi.IpActionAssociate{Ip: privateIP})
 	if err != nil {
 		return "", err
 	}
 
-	return ip.Address, nil
+	if config.Network == "" || config.PublicIP == "" {
+		// Public IP belongs to attached net adapter
+		return *ips[0].Address, nil
+	}
+
+	var privateIP string
+	if config.PrivateIP == "" {
+		privateIP = ips[0].Id
+	} else {
+		privateIP = config.PrivateIP
+	}
+
+	ip, _, err := client.
+		NetworkingProjectIpApi.
+		NetworkingProjectIpAssociate(ctx, config.Project, config.Location, config.PublicIP).
+		NetworkingProjectIpAssociate(*openapi.NewNetworkingProjectIpAssociate(privateIP)).
+		Execute()
+
+	if err != nil {
+		return "", err
+	}
+
+	return *ip.Address, nil
 }
 
 func (s *stepCreateVM) Cleanup(state multistep.StateBag) {
@@ -176,27 +217,48 @@ func (s *stepCreateVM) Cleanup(state multistep.StateBag) {
 	ui := state.Get("ui").(packersdk.Ui)
 
 	ui.Say(fmt.Sprintf("Deleting VM %s...", s.vmID))
-	err := deleteVMWithDisks(s.vmID, state)
+	err := deleteVMWithDisks(context.Background(), state, s.vmID)
 	if err != nil {
 		ui.Error(err.Error())
 	}
 }
 
-func deleteVMWithDisks(vmID string, state multistep.StateBag) error {
+func deleteVMWithDisks(ctx context.Context, state multistep.StateBag, vmID string) error {
 	client := state.Get("client").(*openapi.APIClient)
-	hdds, _, err := client.VmApi.VmListHdd(context.TODO(), vmID)
+	config := state.Get("config").(*Config)
+	ui := state.Get("ui").(packersdk.Ui)
+
+	refreshToken(state) //TODO move to h1-client-go
+	disks, _, err := client.
+		ComputeProjectVmApi.
+		ComputeProjectVmDiskList(ctx, config.Project, config.Location, vmID).
+		Execute()
+
 	if err != nil {
-		return fmt.Errorf("error listing hdd: %s", formatOpenAPIError(err))
+		return fmt.Errorf("error listing disks: %s", formatOpenAPIError(err))
 	}
 
-	deleteOptions := openapi.VmDelete{}
-	for _, hdd := range hdds {
-		deleteOptions.RemoveDisks = append(deleteOptions.RemoveDisks, hdd.Disk.Id)
+	refreshToken(state) //TODO move to h1-client-go
+	_, _, err = client.
+		ComputeProjectVmApi.
+		ComputeProjectVmDelete(ctx, config.Project, config.Location, vmID).
+		Execute()
+
+	if err != nil {
+		return fmt.Errorf("error deleting server '%s' - please delete it manually: %s", vmID, formatOpenAPIError(err))
 	}
 
-	_, err = client.VmApi.VmDelete(context.TODO(), vmID, deleteOptions)
-	if err != nil {
-		return fmt.Errorf("Error deleting server '%s' - please delete it manually: %s", vmID, formatOpenAPIError(err))
+	for _, disk := range disks {
+		ui.Say(fmt.Sprintf("Deleting Disk %s...", disk.Id))
+		refreshToken(state) //TODO move to h1-client-go
+		_, _, err = client.
+			StorageProjectDiskApi.
+			StorageProjectDiskDelete(ctx, config.Project, config.Location, disk.Id).
+			Execute()
+
+		if err != nil {
+			return fmt.Errorf("error deleting disk '%s' - please delete it manually: %s", disk.Id, formatOpenAPIError(err))
+		}
 	}
 
 	return nil
