@@ -3,14 +3,14 @@ module github.com/hashicorp/packer-plugin-hyperone
 go 1.18
 
 require (
-	github.com/hashicorp/hcl/v2 v2.12.0
-	github.com/hashicorp/packer-plugin-sdk v0.3.0
+	github.com/hashicorp/hcl/v2 v2.13.0
+	github.com/hashicorp/packer-plugin-sdk v0.3.1
 	github.com/hyperonecom/h1-client-go v0.0.0-20220420155144-3e4817892e7c
 	github.com/hyperonecom/h1-credentials-helper-go v0.0.0-20220413103723-b8814836b2c9
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/stretchr/testify v1.7.1
 	github.com/zclconf/go-cty v1.10.0
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 )
 
 require (
