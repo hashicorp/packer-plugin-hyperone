@@ -9,7 +9,7 @@ require (
 	github.com/hyperonecom/h1-credentials-helper-go v0.0.0-20220413103723-b8814836b2c9
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/stretchr/testify v1.7.1
-	github.com/zclconf/go-cty v1.10.0
+	github.com/zclconf/go-cty v1.11.1
 	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 )
 
