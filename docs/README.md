@@ -4,7 +4,7 @@ The HyperOne Packer Plugin with a single builder able to create new images on th
 The builder takes a source image, runs any provisioning necessary on
 the image after launching it, then creates a reusable image.
 
-- [hyperone](/docs/builders/hyperone.mdx)
+- [hyperone](/packer/plugins/builders/hyperone.mdx)
 
 ## Installation
 
