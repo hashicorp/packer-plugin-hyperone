@@ -1,14 +1,3 @@
----
-description: |
-  HyperOne Packer builder creates new images on the HyperOne platform.
-  The builder takes a source image, runs any provisioning necessary on
-  the image after launching it, then creates a reusable image.
-page_title: HyperOne - Builders
-nav_title: HyperOne
----
-
-# HyperOne Builder
-
 Type: `hyperone`
 Artifact BuilderId: `hyperone.builder`
 
