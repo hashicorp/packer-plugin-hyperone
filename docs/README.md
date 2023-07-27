@@ -1,43 +1,25 @@
-# HyperOne Plugins
-
-The HyperOne Packer Plugin with a single builder able to create new images on the HyperOne platform.
-The builder takes a source image, runs any provisioning necessary on
-the image after launching it, then creates a reusable image.
-
-- [hyperone](/packer/plugins/builders/hyperone.mdx)
+The HyperOne Plugin is able to create new images on the HyperOne platform.
 
 ## Installation
 
-### Using pre-built releases
-
-#### Using the `packer init` command
-
-Starting from version 1.7, Packer supports a new `packer init` command allowing
-automatic installation of Packer plugins. Read the
-[Packer documentation](https://www.packer.io/docs/commands/init) for more information.
-
-To install this plugin, copy and paste this code into your Packer configuration .
-Then, run [`packer init`](https://www.packer.io/docs/commands/init).
+To install this plugin, copy and paste this code into your Packer configuration, then run [`packer init`](https://www.packer.io/docs/commands/init).
 
 ```hcl
 packer {
   required_plugins {
     hyperone = {
-      version = ">= 1.0.0"
       source  = "github.com/hashicorp/hyperone"
+      version = "~> 1"
     }
   }
 }
 ```
 
-#### Manual installation
+Alternatively, you can use `packer plugins install` to manage installation of this plugin.
 
-You can find pre-built binary releases of the plugin [here](https://github.com/hashicorp/packer-plugin-name/releases).
-Once you have downloaded the latest archive corresponding to your target OS,
-uncompress it to retrieve the plugin binary file corresponding to your platform.
-To install the plugin, please follow the Packer documentation on
-[installing a plugin](https://www.packer.io/docs/extending/plugins/#installing-plugins).
-
+```sh
+packer plugins install github.com/hashicorp/hyperone
+```
 
 #### From Source
 
@@ -47,3 +29,70 @@ directory. Upon successful compilation, a `packer-plugin-hyperone` plugin
 binary file can be found in the root directory.
 To install the compiled plugin, please follow the official Packer documentation
 on [installing a plugin](https://www.packer.io/docs/extending/plugins/#installing-plugins).
+
+### Components
+
+#### Builders
+
+- [hyperone](/packer/plugins/builders/hyperone.mdx) - The hyperone builder takes a source image, runs any
+provisioning necessary on the image after launching it, then creates a reusable image.
+
+### Authentication
+
+HyperOne supports several authentication methods, which are all supported by
+this builder.
+
+#### User session
+
+If using user session, set the `token` field to your authentication token.
+The `project` field is required when using this method.
+
+```json
+{
+  "token": "YOUR TOKEN",
+  "project": "YOUR_PROJECT"
+}
+```
+
+#### User session by SSH key
+
+If you've added an SSH key as a credential to your user account and the
+private key is added to the ssh-agent on your local machine, you can
+authenticate by setting just the platform login (your e-mail address):
+
+```json
+{
+  "token_login": "your.user@example.com"
+}
+```
+
+#### h1 CLI
+
+If you're using [h1-cli](https://github.com/hyperonecom/h1-cli) on your local
+machine, HyperOne builder can use your credentials saved in a config file.
+
+All you have to do is login within the tool:
+
+```shell-session
+$ h1 login --username your.user@example.com
+```
+
+You don't have to set `token` or `project` fields at all using this method.
+
+#### Service account
+
+Using `h1`, you can create a new token associated with chosen project.
+
+```shell-session
+$ h1 project token add --name packer-builder --project PROJECT_ID
+```
+
+Set the `token` field to the generated token or save it in the `HYPERONE_TOKEN`
+environment variable. You don't have to set the `project` option using this
+method.
+
+```json
+{
+  "token": "YOUR TOKEN"
+}
+```

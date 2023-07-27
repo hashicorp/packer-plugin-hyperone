@@ -2,7 +2,7 @@
 # https://github.com/hashicorp/integration-template#metadata-configuration
 integration {
   name = "HyperOne"
-  description = "TODO"
+  description = "The HyperOne plugin can be used with HashiCorp Packer to create custom images on HyperOne."
   identifier = "packer/BrandonRomano/hyperone"
   component {
     type = "builder"
