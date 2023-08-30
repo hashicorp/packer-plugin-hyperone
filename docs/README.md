@@ -25,7 +25,7 @@ packer plugins install github.com/hashicorp/hyperone
 
 #### Builders
 
-- [hyperone](packer/integrations/hashicorp/hyperone/latest/components/builder/hyperone.mdx) - The hyperone builder takes a source image, runs any
+- [hyperone](/packer/integrations/hashicorp/hyperone/latest/components/builder/hyperone) - The hyperone builder takes a source image, runs any
 provisioning necessary on the image after launching it, then creates a reusable image.
 
 ### Authentication
